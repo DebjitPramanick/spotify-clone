@@ -1,9 +1,11 @@
 
 import React, { useEffect, useState } from "react";
 import { makeStyles } from "@material-ui/core/styles";
-import { Row, Col, Container } from "react-bootstrap";
+import { Link } from 'react-router-dom';
+import { LinkContainer } from 'react-router-bootstrap';
+import { Row, Col, Container, Nav, NavDropdown } from "react-bootstrap";
 import "./homemain.css";
-
+import axios from 'axios'
 import { Typography, CardMedia, CardContent, CardActionArea, Card } from "@material-ui/core";
 
 
@@ -12,7 +14,8 @@ const UseStyles = makeStyles((theme) => ({
         // maxWidth: 345,
         width: "12rem",
         height: "15.5rem",
-        backgroundColor: '#121212'
+        backgroundColor: '#121212',
+        boxShadow: '2px 6px 23px 0px rgba(0,0,0,0.75)'
     },
 
     img: {
@@ -29,7 +32,9 @@ const UseStyles = makeStyles((theme) => ({
         padding: "2px",
         color: "rgba(255, 255, 255, 0.877)",
         fontFamily: `'Cormorant', serif`
-    }
+    },
+
+
 
 }));
 
@@ -39,7 +44,9 @@ function HomeMain() {
 
     const classes = UseStyles();
     const [greet, setgreet] = useState(' ');
-
+    const [token, setToken] = useState('');  
+    const [category, setcategory] = useState([{}]);
+    
 
     var data = [
         [0, 4, "Hello Niharika Good night !"],
@@ -63,17 +70,87 @@ function HomeMain() {
             }
         }
     }, [])
+    useEffect(() => {
 
+        axios('https://accounts.spotify.com/api/token', {
+            headers: {
+              'Content-Type' : 'application/x-www-form-urlencoded',
+              'Authorization' : 'Basic ' + btoa('fe38b5c6ece347b28b592f7e96728201' + ':' + 'f2aa55e3ea0641c996f086d9b94e4846')      
+            },
+            data: 'grant_type=client_credentials',
+            method: 'POST'
+          })
+          .then(tokenResponse => {      
+            setToken(tokenResponse.data.access_token);
+          //   console.log(token);
+            axios('https://api.spotify.com/v1/browse/categories?locale=sv_US', {
+              method: 'GET',
+              headers: { 'Authorization' : 'Bearer ' + tokenResponse.data.access_token}
+            })
+            .then (genreResponse => {        
+             
+              setcategory(genreResponse.data.categories.items);
+              // console.log(genreResponse);
+            });
+            // console.log(category);
+          });       
+      }, [category]); 
+
+    var username = "Niharika Dutta";
 
     return (
-        <div style={{ background: "#1B1B1B", margin: "auto",overflowX:'hidden' }}>
+        <div style={{ background: "#1B1B1B", margin: "auto", overflowX: 'hidden' }}>
             <Container className="container_self">
+
+                {/* ------------------    TOP BAR   ----------------------- */}
+                <div class="d-flex bd-highlight top_bar ">
+
+                    <div class="p-2 flex-grow-0 bd-highlight">
+                        <Link to="/app"> <i className="arrow left"></i> </Link>
+                    </div>
+
+                    <div class="p-2 flex-grow-1 bd-highlight">
+                        <Link to="/app/search"> <i className="arrow right"></i> </Link>
+                    </div>
+
+                    <div class="p-2 bd-highlight">
+                        <section className=" Button">
+                            <a className="Button-btn" href="/login"> Sign Up</a>
+                        </section>
+                    </div>
+
+                    <div class="p-2 bd-highlight">
+                        {username ?
+                            (<NavDropdown title={username} id="username" className="navBig">
+                                <i class="fas fa-user"></i>
+                                <LinkContainer to='/account' >
+                                    <NavDropdown.Item >Account </NavDropdown.Item>
+                                </LinkContainer>
+
+                                <LinkContainer to='/profile' >
+                                    <NavDropdown.Item > Profile </NavDropdown.Item>
+                                </LinkContainer>
+
+                                <NavDropdown.Item >Logout</NavDropdown.Item>
+                            </NavDropdown>)
+                            :
+                            (<LinkContainer to="/login">
+                                <Nav.Link className="navBig" >  Sign In {''}
+                                    <i class="far fa-user"></i>
+                                </Nav.Link>
+                            </LinkContainer>)
+                        }
+                    </div>
+
+                </div>
+
+
 
                 <h2 className="Welcome" > {greet} </h2>
 
                 <Row style={{ marginBottom: "7rem" }}>
 
-                    <Col md={4} lg={4} xs={12} style={{ marginRight:"0px" , paddingRight:"2rem" }}>
+                    <Col md={4} lg={4} xs={12} style={{ marginRight: "0px", paddingRight: "2rem" }}>
                         <div className="card myCard" style={{ backgroundColor: "#414B4E", marginRight: "-2px" }}>
                             <div className="card-horizontal" id="Hover_card" >
                                 <div className="img-square-wrapper">
@@ -140,30 +217,38 @@ function HomeMain() {
                     <h2 className="home_head">Recently Played</h2>
 
                     <div class="row row-col-4 text-center">
-                        <div class="col-lg-3  col-md-3 col-sm-6 col-xs-6 my_col">
-                            <Card className={classes.root}>
-                                <CardActionArea>
-                                    <CardMedia
-                                        className={classes.img}
-                                        component="img"
-                                        alt="Contemplative Reptile"
-                                        height="160"
-                                        image="https://images.unsplash.com/reserve/Af0sF2OS5S5gatqrKzVP_Silhoutte.jpg?ixid=MXwxMjA3fDB8MHxzZWFyY2h8MTJ8fGxvdmV8ZW58MHx8MHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=60"
-                                        title="Contemplative Reptile"
-                                    />
-                                    <CardContent className={classes.Cardcontent}>
-                                        <Typography gutterBottom variant="h6" component="h2" className={classes.card_head} >
-                                            Lorem Ipsum
-                                          </Typography>
-                                        <Typography variant="body2" component="p">
-                                            Lorem Ipsum is simply dummy text of the printing
-                                        </Typography>
-                                    </CardContent>
-                                </CardActionArea>
-                            </Card>
-                        </div>
+                        
+                       { category.map((data)=>{
+                            return(
+                                <>
+                                 <div class="col-lg-3  col-md-3 col-sm-6 col-xs-6 my_col">
+                                 <Card className={classes.root}>
+                                 <CardActionArea>
+                                     <CardMedia
+                                         className={classes.img}
+                                         component="img"
+                                         alt="Contemplative Reptile"
+                                         height="160"
+                                         image={data.name?data.icons[0].url:''}
+                                         title="Contemplative Reptile"
+                                     />
+                                     <CardContent className={classes.Cardcontent}>
+                                         <Typography gutterBottom variant="h6" component="h2" className={classes.card_head} >
+                                            {data.name}
+                                           </Typography>
+                                         <Typography variant="body2" component="p">
+                                             Lorem Ipsum is simply dummy text of the printing
+                                         </Typography>
+                                     </CardContent>
+                                 </CardActionArea>
+                             </Card>
+                         </div>
+                                 </>
+                            );                           
+                       })
+                       }
 
-                        <div class="col-lg-3  col-md-3 col-sm-6 col-xs-6 my_col">
+                        {/* <div class="col-lg-3  col-md-3 col-sm-6 col-xs-6 my_col">
                             <Card className={classes.root}>
                                 <CardActionArea>
                                     <CardMedia
@@ -230,7 +315,7 @@ function HomeMain() {
                                     </CardContent>
                                 </CardActionArea>
                             </Card>
-                        </div>
+                        </div> */}
 
 
                     </div>
